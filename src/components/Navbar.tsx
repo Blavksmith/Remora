@@ -37,8 +37,8 @@ export const Navbar = ({ user }: NavbarProps) => {
       <div className="container flex h-16 items-center justify-between px-4">
         <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
           <img src="/letter-r.png" alt="Logo" className="h-6 w-6" />
+          <span className="font-sans text-xl font-bold">Remora</span>
 
-          <span className="font-serif text-xl font-bold">REMORA</span>
         </Link>
 
         <div className="flex items-center gap-4">
@@ -47,6 +47,7 @@ export const Navbar = ({ user }: NavbarProps) => {
               <Link to="/dashboard">
                 <Button 
                   variant={isActive("/dashboard") ? "default" : "ghost"}
+                  className="hidden md:inline-flex hover:bg-slate-200 hover:text-slate-900"
                   size="sm"
                 >
                   Dashboard
@@ -55,6 +56,7 @@ export const Navbar = ({ user }: NavbarProps) => {
               <Link to="/upload">
                 <Button 
                   variant={isActive("/upload") ? "default" : "ghost"}
+                  className="hidden md:inline-flex hover:bg-slate-200 hover:text-slate-900"
                   size="sm"
                 >
                   Buat Flashcard
@@ -63,6 +65,7 @@ export const Navbar = ({ user }: NavbarProps) => {
               <Link to="/profile">
                 <Button 
                   variant={isActive("/profile") ? "default" : "ghost"}
+                  className="hidden md:inline-flex hover:bg-slate-200 hover:text-slate-900"
                   size="sm"
                 >
                   Profile
@@ -72,7 +75,7 @@ export const Navbar = ({ user }: NavbarProps) => {
                 onClick={handleLogout} 
                 variant="outline" 
                 size="sm"
-                className="gap-2"
+                className="gap-2 hidden md:inline-flex hover:bg-red-400 hover:text-slate-900"
               >
                 <LogOut className="h-4 w-4" />
                 Logout
@@ -80,8 +83,8 @@ export const Navbar = ({ user }: NavbarProps) => {
             </>
           ) : (
             <Link to="/auth">
-              <Button variant="default" size="sm">
-                Login
+              <Button variant="default" className="hidden text-white bg-slate-800 px-6 md:inline-flex hover:bg-slate-100 hover:text-slate-900" size="sm">
+                Mulai belajar!
               </Button>
             </Link>
           )}
