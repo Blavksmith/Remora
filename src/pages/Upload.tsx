@@ -10,7 +10,7 @@ import { Navbar } from "@/components/Navbar";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { Sparkles, Save, Loader2, Upload as UploadIcon } from "lucide-react";
+import { Sparkles, Save, Loader2 } from "lucide-react";
 
 interface Flashcard {
   question: string;
@@ -27,11 +27,100 @@ const Upload = () => {
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Ambil API key dari environment variable
+  const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
   useEffect(() => {
     if (!loading && !user) {
       navigate("/auth");
     }
   }, [user, loading, navigate]);
+
+  const generateFlashcardsWithGemini = async (title: string, notes: string) => {
+    const prompt = `Kamu adalah asisten AI yang ahli dalam membuat flashcard berkualitas tinggi untuk membantu siswa belajar secara efektif menggunakan teknik spaced repetition dan active recall.
+
+CATATAN SISWA:
+Judul: ${title}
+Isi: ${notes}
+
+TUGAS:
+Buat 8-15 flashcard berkualitas tinggi dari catatan di atas. Flashcard harus:
+
+1. MEMACU PENGINGATAN AKTIF - buat pertanyaan yang memaksa siswa mengingat, bukan hanya mengenali
+2. SPESIFIK & JELAS - hindari pertanyaan yang ambigu
+3. SATU KONSEP PER KARTU - jangan gabungkan banyak informasi
+4. GUNAKAN BERBAGAI TIPE PERTANYAAN:
+   - "Apa definisi dari...?"
+   - "Jelaskan perbedaan antara X dan Y"
+   - "Bagaimana proses X terjadi?"
+   - "Mengapa X penting untuk Y?"
+   - "Sebutkan contoh dari..."
+   - "Apa fungsi dari...?"
+
+5. JAWABAN HARUS:
+   - Ringkas tapi lengkap
+   - Mudah diingat
+   - Berisi informasi kunci dari catatan
+
+FORMAT OUTPUT (HARUS JSON VALID):
+{
+  "flashcards": [
+    {
+      "question": "Pertanyaan yang spesifik dan jelas",
+      "answer": "Jawaban ringkas namun lengkap"
+    }
+  ]
+}
+
+PENTING: 
+- Output HANYA JSON, tanpa markdown atau text tambahan
+- Buat pertanyaan dalam bahasa yang sama dengan catatan (Indonesia/Inggris/campur)
+- Prioritaskan konsep paling penting terlebih dahulu`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 2048,
+          },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Gemini API error: ${errorData.error?.message || response.status}`);
+    }
+
+    const data = await response.json();
+    const textResponse = data.candidates[0].content.parts[0].text;
+
+    // Clean up response - remove markdown code blocks if present
+    let cleanedResponse = textResponse.trim();
+    cleanedResponse = cleanedResponse.replace(/```json\n?/g, "");
+    cleanedResponse = cleanedResponse.replace(/```\n?/g, "");
+    cleanedResponse = cleanedResponse.trim();
+
+    const parsedData = JSON.parse(cleanedResponse);
+    return parsedData.flashcards;
+  };
 
   const handleGenerate = async () => {
     if (!notes.trim() || !title.trim()) {
@@ -52,28 +141,29 @@ const Upload = () => {
       return;
     }
 
-    setGenerating(true);
-    
-    try {
-      // Call Supabase Edge Function to generate flashcards using AI
-      const { data, error } = await supabase.functions.invoke('generate-flashcards', {
-        body: {
-          title: title,
-          notes: notes,
-        }
+    if (!GEMINI_API_KEY) {
+      toast({
+        title: "API Key Belum Diisi",
+        description: "Silakan setup VITE_GEMINI_API_KEY di file .env",
+        variant: "destructive",
       });
+      return;
+    }
 
-      if (error) throw error;
+    setGenerating(true);
 
-      if (!data || !data.flashcards || data.flashcards.length === 0) {
+    try {
+      const generatedFlashcards = await generateFlashcardsWithGemini(title, notes);
+
+      if (!generatedFlashcards || generatedFlashcards.length === 0) {
         throw new Error("Gagal menghasilkan flashcard. Coba lagi.");
       }
 
-      setFlashcards(data.flashcards);
-      
+      setFlashcards(generatedFlashcards);
+
       toast({
         title: "Flashcard Generated!",
-        description: `${data.flashcards.length} flashcard telah dibuat dari catatanmu`,
+        description: `${generatedFlashcards.length} flashcard telah dibuat dari catatanmu`,
       });
     } catch (error: any) {
       console.error("Error generating flashcards:", error);
@@ -98,9 +188,8 @@ const Upload = () => {
     }
 
     setSaving(true);
-    
+
     try {
-      // Create flashcard set
       const { data: setData, error: setError } = await supabase
         .from("flashcard_sets")
         .insert({
@@ -113,11 +202,10 @@ const Upload = () => {
 
       if (setError) throw setError;
 
-      // Insert flashcards
       const { error: cardsError } = await supabase
         .from("flashcards")
         .insert(
-          flashcards.map(card => ({
+          flashcards.map((card) => ({
             set_id: setData.id,
             question: card.question,
             answer: card.answer,
@@ -168,14 +256,13 @@ const Upload = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#E6F0FA] via-[#F9FAFB] to-[#E6F0FA]">
       <Navbar user={user} />
-      
+
       <main className="container py-8 px-4 max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          {/* Header */}
           <div className="mb-8">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -183,7 +270,7 @@ const Upload = () => {
               className="flex items-center gap-3 mb-3"
             >
               <div className="p-3 bg-gradient-to-br from-[#A7C1A7] to-[#A7C1A7]/80 rounded-xl shadow-lg">
-                <UploadIcon className="h-6 w-6 text-white" />
+                <Sparkles className="h-6 w-6 text-white" />
               </div>
               <div>
                 <h1 className="text-4xl font-['Lora'] font-bold text-[#6B7280]">
@@ -197,7 +284,6 @@ const Upload = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Input Section */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -214,7 +300,10 @@ const Upload = () => {
                 </CardHeader>
                 <CardContent className="space-y-5 pt-6">
                   <div className="space-y-2">
-                    <Label htmlFor="title" className="font-['Open_Sans'] text-[#6B7280] font-semibold">
+                    <Label
+                      htmlFor="title"
+                      className="font-['Open_Sans'] text-[#6B7280] font-semibold"
+                    >
                       Judul Flashcard Set
                     </Label>
                     <Input
@@ -225,9 +314,12 @@ const Upload = () => {
                       className="border-2 border-[#E6F0FA] focus:border-[#A7C1A7] rounded-xl font-['Open_Sans']"
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
-                    <Label htmlFor="notes" className="font-['Open_Sans'] text-[#6B7280] font-semibold">
+                    <Label
+                      htmlFor="notes"
+                      className="font-['Open_Sans'] text-[#6B7280] font-semibold"
+                    >
                       Catatan
                     </Label>
                     <Textarea
@@ -235,19 +327,19 @@ const Upload = () => {
                       placeholder="Paste catatanmu di sini... 
 
 Tips untuk hasil terbaik:
-• Pastikan catatan lengkap dan terstruktur
-• Minimal 50 kata
-• Sertakan konsep, definisi, dan penjelasan
-• Tulis dengan jelas dan sistematis"
+- Pastikan catatan lengkap dan terstruktur
+- Minimal 50 kata
+- Sertakan konsep, definisi, dan penjelasan
+- Tulis dengan jelas dan sistematis"
                       className="min-h-[350px] resize-none border-2 border-[#E6F0FA] focus:border-[#A7C1A7] rounded-xl font-['Open_Sans']"
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                     />
                     <div className="flex items-center justify-between">
                       <p className="text-sm text-[#6B7280]/60 font-['Open_Sans']">
-                        {notes.split(/\s+/).filter(w => w).length} kata
+                        {notes.split(/\s+/).filter((w) => w).length} kata
                       </p>
-                      {notes.split(/\s+/).filter(w => w).length >= 50 && (
+                      {notes.split(/\s+/).filter((w) => w).length >= 50 && (
                         <p className="text-sm text-[#A7C1A7] font-['Open_Sans'] flex items-center gap-1">
                           <Sparkles className="h-3 w-3" />
                           Siap untuk di-generate!
@@ -257,8 +349,8 @@ Tips untuk hasil terbaik:
                   </div>
 
                   <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <Button 
-                      onClick={handleGenerate} 
+                    <Button
+                      onClick={handleGenerate}
                       disabled={generating}
                       className="w-full gap-2 bg-gradient-to-r from-[#A7C1A7] to-[#A7C1A7]/90 hover:from-[#A7C1A7]/90 hover:to-[#A7C1A7] text-white shadow-lg rounded-xl py-6 font-['Open_Sans'] font-semibold text-base"
                     >
@@ -283,7 +375,8 @@ Tips untuk hasil terbaik:
                       className="bg-[#E6F0FA] rounded-xl p-4"
                     >
                       <p className="text-sm text-[#6B7280] font-['Open_Sans'] text-center">
-                        AI sedang menganalisis catatanmu dan membuat pertanyaan yang membantu mengingat...
+                        AI sedang menganalisis catatanmu dan membuat pertanyaan yang
+                        membantu mengingat...
                       </p>
                     </motion.div>
                   )}
@@ -291,7 +384,6 @@ Tips untuk hasil terbaik:
               </Card>
             </motion.div>
 
-            {/* Preview Section */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -303,10 +395,9 @@ Tips untuk hasil terbaik:
                     Preview Flashcards
                   </CardTitle>
                   <CardDescription className="font-['Open_Sans'] text-[#6B7280]/60">
-                    {flashcards.length > 0 
+                    {flashcards.length > 0
                       ? `${flashcards.length} flashcard telah dibuat oleh AI`
-                      : "Flashcard akan muncul di sini setelah di-generate"
-                    }
+                      : "Flashcard akan muncul di sini setelah di-generate"}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6">
@@ -363,15 +454,15 @@ Tips untuk hasil terbaik:
                         ))}
                       </div>
 
-                      <motion.div 
+                      <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: flashcards.length * 0.1 + 0.2 }}
-                        whileHover={{ scale: 1.02 }} 
+                        whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         className="mt-6"
                       >
-                        <Button 
+                        <Button
                           onClick={handleSave}
                           disabled={saving}
                           className="w-full gap-2 bg-gradient-to-r from-[#6B7280] to-[#6B7280]/90 hover:from-[#6B7280]/90 hover:to-[#6B7280] text-white shadow-lg rounded-xl py-6 font-['Open_Sans'] font-semibold text-base"

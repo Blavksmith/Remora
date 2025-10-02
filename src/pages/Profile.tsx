@@ -4,8 +4,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Navbar } from "@/components/Navbar";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -16,7 +28,7 @@ const Profile = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [language, setLanguage] = useState("id");
@@ -65,15 +77,13 @@ const Profile = () => {
     setSaving(true);
 
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .upsert({
-          id: user?.id,
-          name,
-          email,
-          language,
-          updated_at: new Date().toISOString(),
-        });
+      const { error } = await supabase.from("profiles").upsert({
+        id: user?.id,
+        name,
+        email,
+        language,
+        updated_at: new Date().toISOString(),
+      });
 
       if (error) throw error;
 
@@ -106,7 +116,7 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar user={user} />
-      
+
       <main className="container py-8 px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -122,7 +132,9 @@ const Profile = () => {
           <Card>
             <CardHeader>
               <CardTitle className="font-serif">Informasi Profile</CardTitle>
-              <CardDescription>Update nama dan preferensi bahasa</CardDescription>
+              <CardDescription>
+                Update nama dan preferensi bahasa
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSave} className="space-y-4">
@@ -151,21 +163,8 @@ const Profile = () => {
                   </p>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="language">Bahasa Preferensi</Label>
-                  <Select value={language} onValueChange={setLanguage}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Pilih bahasa" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="id">Bahasa Indonesia</SelectItem>
-                      <SelectItem value="en">English</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   disabled={saving}
                   className="w-full gap-2"
                 >
