@@ -1,73 +1,97 @@
-# Welcome to your Lovable project
+# REMORA - Flashcard Maker from Notes
 
-## Project info
+## Overview
+**REMORA** is a web application designed to help students efficiently retain and memorize information by automatically generating flashcards from text notes. Leveraging AI, the platform transforms lengthy notes into concise question-answer pairs, supporting learning techniques such as **spaced repetition** and **active recall**, which have been proven to improve long-term retention.
 
-**URL**: https://lovable.dev/projects/a0f908c3-2c7b-4dbd-b9ad-33b7197725ef
+### Key Goals
+- **Learning Efficiency:** Convert long notes into easily memorizable flashcards.
+- **Interactive & Personal:** Provides an interactive quiz mode and user-specific storage for notes and flashcards.
+- **Accessibility:** Simple, mobile-friendly interface suitable for busy students.
+- **Local Focus:** Supports notes in both Bahasa Indonesia and English, with AI understanding local context.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## Page Structure
 
-**Use Lovable**
+### Hero Page (`/`)
+- **Tagline:** "Turn Your Notes into Smart Flashcards for Efficient Learning!"
+- **Features:** 
+  - CTA "Try Now" → redirects to `/upload`
+  - "Login" → redirects to `/auth`
+  - Illustration of books/flashcards
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/a0f908c3-2c7b-4dbd-b9ad-33b7197725ef) and start prompting.
+### Login/Signup Page (`/auth`)
+- Login/signup form via email or Google OAuth
+- Redirect to dashboard upon successful login
 
-Changes made via Lovable will be committed automatically to this repo.
+### Dashboard Page (`/dashboard`)
+- List of user's notes and flashcards
+- Button to create new flashcards
+- Progress statistics
 
-**Use your preferred IDE**
+### Upload Notes Page (`/upload`)
+- Textarea for notes input
+- Generate flashcards via AI
+- Preview before saving
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Quiz Mode Page (`/quiz/[flashcardId]`)
+- Interactive flashcards with flip animation
+- Buttons to mark "Understood" or "Not Understood"
+- Summary of quiz results
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Profile Page (`/profile`)
+- Edit name/email and language preferences
+- Logout button
 
-Follow these steps:
+---
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## Design & Visuals
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Color Palette
+- **Primary:** Blue-gray (`#E6F0FA`, `#6B7280`) — calm and focused
+- **Secondary:** Soft cream (`#F9FAFB`, `#D1D5DB`) — neutral, clean
+- **Accent:** Sage green (`#A7C1A7`) — represents growth and calmness
 
-# Step 3: Install the necessary dependencies.
-npm i
+**Reason:** The softer palette reduces visual strain for long-term use, especially at night.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+### Typography
+- **Primary Font:** Lora (serif, Google Fonts) — elegant and readable
+- **Secondary Font:** Open Sans (sans-serif, Google Fonts) — for labels, buttons, small UI text
+- **Sizing:** Body 16px, Heading1 28px, Heading2 20px, line-height 1.6
 
-**Edit a file directly in GitHub**
+### Visual Elements
+- **Icons:** Heroicons via Tailwind CSS
+- **Illustrations:** Minimalistic, e.g., open book or flashcard outline
+- **UI:** Card-based layout for flashcards and notes with rounded-xl borders and soft shadows
+- **Layout:** Responsive, consistent spacing (`p-4`, `m-4`), top navbar with logo and navigation links
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+**Goal:** Create a calming study environment with easy readability and a minimalistic aesthetic.
 
-**Use GitHub Codespaces**
+---
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Technology Stack
 
-## What technologies are used for this project?
+### Frontend
+- React 18
+- React Router DOM
+- Tailwind CSS + Tailwind Animations
+- Framer Motion
+- Radix UI Components (Accordion, Dialog, Dropdown, Tooltip, etc.)
+- Lucide-react Icons
+- React Hook Form + Zod
 
-This project is built with:
+### Backend
+- Supabase (Authentication, Database)
 
-- Vite
+### Utilities
+- date-fns
+- clsx
+- lovable-tagger (development)
+- tailwind-merge
+
+### Dev Tools
+- Vite + SWC Plugin for React
 - TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/a0f908c3-2c7b-4dbd-b9ad-33b7197725ef) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- ESLint + Prettier
+- PostCSS
+- @tailwindcss/typography
