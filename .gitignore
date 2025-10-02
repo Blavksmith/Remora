@@ -1,0 +1,49 @@
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.VITE_*  # Supaya key VITE_ tidak ikut ke git
+
+# Build outputs
+dist/
+build/
+out/
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor / IDE files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Supabase artifacts
+supabase/.auth/
+
+# TypeScript
+*.tsbuildinfo
+
+# Storybook
+.out/
+.storybook-out/
+
+# Temporary
+tmp/
+temp/
+
+# Misc
+*.tgz
+*.swp
